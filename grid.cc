@@ -18,7 +18,7 @@ unsigned char grid_sprite_offsets_x[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 160-175
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 176-191
     0, 2, 0, 0, 0, 4, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, // 192-207
-    0, 7, 0, 0, 0, 6, 5, 5, 0, 0, 0, 0, 0, 5, 0, 5, // 208-223
+    0, 7, 0, 0, 0, 6, 5, 5, 0, 0, 0, 0, 0, 4, 0, 5, // 208-223
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 224-239
     0, 2, 0, 0, 0, 4, 0, 6, 0, 0, 0, 0, 0, 2, 0, 2  // 240-255
 };
@@ -56,39 +56,49 @@ void GridChunk::AddTile(int x, int y)
     if (tile_sprites[x][y] != 0)
         tile_sprites[x][y] = 0;
 
+    UpdateTile(x, y);
+
+    for (int i = 0; i < 8; ++i)
+    {
+        int nX = x + grid_directions[0][i], nY = y + grid_directions[1][i];
+
+        if (!TileValid(nX, nY) or !tiles[nX][nY])
+            continue;
+        UpdateTile(nX, nY);
+    }
+}
+
+void GridChunk::UpdateTile(int x, int y)
+{
+    if (!(TileValid(x, y) and tiles[x][y]))
+        return;
+
+    tile_sprites[x][y] = 0;
+
     for (int i = 0; i < 8; i += 2)
     {
         int nX = x + grid_directions[0][i], nY = y + grid_directions[1][i];
 
-        if (!TileValid(nX, nY) or !tiles[nX][nY])
+        if (!(TileValid(nX, nY) and tiles[nX][nY]))
             continue;
 
         tile_sprites[x][y] |= 1 << i;
-        tile_sprites[nX][nY] |= 1 << ((i - 4) & 7);
     }
 
     for (int i = 1; i < 8; i += 2)
     {
-        int nX = x + grid_directions[0][i], nY = y + grid_directions[1][i];
+        int nX = x + grid_directions[0][i], nY = y + grid_directions[1][i], mask = ((1 << (i - 1)) | (1 << (i + 1) % 8));
 
-        if (!TileValid(nX, nY) or !tiles[nX][nY])
+        if (!(TileValid(nX, nY) and tiles[nX][nY] and ((tile_sprites[x][y] & mask) == mask)))
             continue;
 
-        int prevI = i - 1, nextI = (i + 1) & 7, mask = (1 << prevI) | (1 << nextI);
-
-        if (tile_sprites[x][y] & mask == mask)
-            tile_sprites[x][y] |= 1 << i;
-
-        prevI = (i + 3) & 7, nextI = (i + 5) & 7, mask = (1 << prevI) | (1 << nextI);
-
-        if (tile_sprites[nX][nY] & mask == mask)
-            tile_sprites[nX][nY] |= 1 << ((i - 4) & 7);
+        tile_sprites[x][y] |= 1 << i;
     }
 }
 
 void GridChunk::RemoveTile(int x, int y)
 {
-    if (!TileValid(x, y) or !tiles[x][y])
+    if (!(TileValid(x, y) and tiles[x][y]))
         return;
 
     tiles[x][y] = false;
@@ -98,10 +108,10 @@ void GridChunk::RemoveTile(int x, int y)
     {
         int nX = x + grid_directions[0][i], nY = y + grid_directions[1][i];
 
-        if (!TileValid(nX, nY) or !tiles[nX][nY])
+        if (!(TileValid(nX, nY) and tiles[nX][nY]))
             continue;
 
-        tile_sprites[nX][nY] &= ~(1 << ((i - 4) & 7));
+        UpdateTile(nX, nY);
     }
 }
 

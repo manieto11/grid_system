@@ -15,6 +15,7 @@ private:
     const Texture* texture;
 
     void AddTile(int x, int y);
+    void UpdateTile(int x, int y);
     void RemoveTile(int x, int y);
 
 public:

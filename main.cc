@@ -8,7 +8,7 @@ int main()
     SetExitKey(KEY_NULL);
     SetTargetFPS(60);
 
-    Texture texture = LoadTexture("./default_grid.png");
+    Texture texture = LoadTexture("./default_grid_2.png");
 
     GridChunk grid;
 
@@ -48,6 +48,8 @@ int main()
         DrawFPS(10, 10);
         EndDrawing();
     }
+
+    UnloadTexture(texture);
 
     CloseWindow();
 }
